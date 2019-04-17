@@ -7,12 +7,10 @@ import (
 )
 
 // Creates a new ISmartChannelReference with the given smartChannel pointer.
-func newSmartChannelReference(sc *smartChannel) ISmartChannelReference {
-    tmp := channelOpen
-
+func newSmartChannelReference(sc *smartChannel, released uint32) ISmartChannelReference {
     return &smartChannelReference {
         sc: sc,
-        released: &tmp,
+        released: &released,
         once: new(sync.Once),
     }
 }

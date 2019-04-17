@@ -45,7 +45,7 @@ func NewSmartChannel(buffer int) (ISmartChannel) {
 // Get() returns a new ISmartChannelReference
 func (sc *smartChannel) Get() ISmartChannelReference {
     // Make the new reference
-    scr := newSmartChannelReference(sc)
+    scr := newSmartChannelReference(sc, atomic.LoadUint32(sc.closed))
 
     // Increment counter for a reference
     sc.waiter.Add(1)
