@@ -138,10 +138,6 @@ func (sc *smartChannel) receive(timeout time.Duration) (interface{}, bool, *Time
 //  2) there are no references left
 //  3) there are no items left in the channel
 //  4) the channel is not already closed
-//
-// If (3) is true, then schedule_release has the option
-// of disregarding the attempt to close or waiting till
-// the channel is empty based on "closeWhenPossible" bool.
 func (sc *smartChannel) schedule_release(closeWhenPossible bool) (<-chan bool) {
     releaseChannel := make(chan bool)
 
@@ -158,6 +154,9 @@ func (sc *smartChannel) schedule_release(closeWhenPossible bool) (<-chan bool) {
 
             // Close the channel only once
             sc.once.Do(func() {
+                // We want to make sure that we close the channel,
+                // *then* reflect the change. If the close somehow
+                // panics, we don't want to store an inaccurate state.
                 close(sc.channel)
 
                 // Store that we've closed the channel
@@ -167,10 +166,10 @@ func (sc *smartChannel) schedule_release(closeWhenPossible bool) (<-chan bool) {
             c <- true
         }(releaseChannel)
     } else {
-        go func() {
-            defer close(releaseChannel);
-            releaseChannel <- false
-        }()
+        go func(c chan<- bool) {
+            defer close(c);
+            c <- false
+        }(releaseChannel)
     }
 
     return releaseChannel
