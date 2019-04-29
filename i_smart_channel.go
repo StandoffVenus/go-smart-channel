@@ -4,7 +4,6 @@
 // on said channels. That said, the consumer of
 // the API should be able to determine types when
 // needed and so this concern is nullified.
-//
 package smart_channel
 
 import ( "time" )
