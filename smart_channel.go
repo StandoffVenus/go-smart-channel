@@ -70,7 +70,9 @@ func (sc *smartChannel) IsClosed() bool {
 //      return (true, nil)
 //  < 0: panic!
 func (sc *smartChannel) send(value interface{}, timeout time.Duration) (bool, *TimeoutError) {
-    if sc.IsClosed() { return false, nil }
+    if sc.IsClosed() {
+        return false, nil
+    }
 
     // We're going to send, so we'll wait once
     sc.waiter.Add(1)
@@ -88,7 +90,7 @@ func (sc *smartChannel) send(value interface{}, timeout time.Duration) (bool, *T
             sc.channel <- value
             return true, nil
         default:
-            panic("timeout out of logical range (negative)")
+            panic("timeout outside logical range (negative)")
     }
 }
 
@@ -126,7 +128,7 @@ func (sc *smartChannel) receive(timeout time.Duration) (interface{}, bool, *Time
             val := <-sc.channel
             return val, true, nil
         default:
-            panic("timeout out of logical range (negative)")
+            panic("timeout outside logical range (negative)")
     }
 }
 
