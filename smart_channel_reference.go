@@ -36,13 +36,18 @@ func (scr *smartChannelReference) IsReleased() bool {
 func (scr *smartChannelReference) Release(closeOnLast bool) <-chan bool {
     c := make(chan bool, 1)
 
-    go scr.once.Do(
-        func() {
-            defer close(c)
+    go func() {
+        defer close(c)
 
-            c <- (<-scr.sc.schedule_release(closeOnLast))
-            atomic.StoreUint32(scr.released, channelReleased)
-        })
+        if atomic.LoadUint32(scr.released) != channelReleased {
+            scr.once.Do(func() {
+                c <- (<-scr.sc.schedule_release(closeOnLast))
+                atomic.StoreUint32(scr.released, channelReleased)
+            })
+        } else {
+            c <- true
+        }
+    })
 
     return c
 }
