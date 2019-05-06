@@ -47,7 +47,7 @@ func (scr *smartChannelReference) Release(closeOnLast bool) <-chan bool {
         } else {
             c <- true
         }
-    })(c)
+    }(c)
 
     return c
 }
