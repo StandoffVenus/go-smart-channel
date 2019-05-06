@@ -158,6 +158,18 @@ func Test_send_Panics_When_Bad_Timeout_Given(t *testing.T) {
     assert.Panics(t, func() { sc.send("panic", -1) })
 }
 
+func Test_receive_Returns_False_On_Close(t *testing.T) {
+    sc := NewSmartChannel(0).(*smartChannel)
+    <-sc.Get().Release(true) // Get reference to close channel
+
+    val, success, err := sc.receive(0) // Wait forever
+
+    // Make sure this all holds up; we're closed, nothing should have value
+    assert.Nil(t, val)
+    assert.False(t, success)
+    assert.Nil(t, err)
+}
+
 // Helper that lets us wrap functions so that we will
 // only need to wait on a channel.
 func WrapFuncToChannel(f interface{}, args ...interface{}) (<-chan interface{}) {
