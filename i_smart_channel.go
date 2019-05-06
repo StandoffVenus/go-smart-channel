@@ -53,9 +53,8 @@ type ISmartChannelReference interface {
     // sending or receiving impossible. Think of it as
     // closing a "child" channel.
     //
-    // The returned channel will send true iff
-    //  1) the channel is already closed
-    //  2) the channel is open but closeChannel is true
+    // The returned channel will send true iff the ISmartChannel
+    // is open and closeChannel is true.
     // Otherwise, the channel will send false.
     //
     // If any other ISmartChannelReference's have not called
