@@ -116,25 +116,51 @@ func Test_send_Times_Out_If_Supplied_Timeout(t *testing.T) {
 
     sc := NewSmartChannel(0).(*smartChannel)
 
-    // In the case send doesn't timeout, we don't
-    // want our test to take forever.
-    timer := time.After(timeout * 2)
-
-    sendResults := WrapToChannel(sc.send, "nonZero", timeout)
+    sendResults := WrapFuncToChannel(sc.send, "nonZero", timeout)
 
     // We'll block here because it must timeout
     select {
         case success := <-sendResults:                          // Returns will be
             assert.False(t, success.(bool))                     // 1) success (bool)
-            assert.NotNil(t, (<-sendResults).(*TimeoutError))   // 2) timeout (TimeoutError)
-        case <-timer:
+
+            err := (<-sendResults).(*TimeoutError)              // 2) timeout (TimeoutError)
+            assert.NotNil(t, err)
+            assert.Equal(t, send, err.operation) // send is an unexported const
+            assert.Equal(t, timeout, err.timeoutLength)
+        case <-time.After(timeout * 2):
             t.Fatalf("Should have timed out by now. Over %v has passed.", timeout)
     }
 }
 
+func Test_send_Returns_If_No_Timeout(t *testing.T) {
+    const timeout = time.Second * 1
+
+    if testing.Short() {
+        t.Skipf("Waiting for send to timeout could add %v", timeout * 2)
+    }
+
+    sc := NewSmartChannel(0).(*smartChannel)
+
+    sendResults := WrapFuncToChannel(sc.send, "value", timeout)
+    go sc.receive(0) // We don't care what this returns
+
+    select {
+        case success := <-sendResults:
+            assert.True(t, success.(bool))
+            assert.Nil(t, <-sendResults)
+        case <-time.After(timeout * 2):
+            t.Fatalf("Should not have timed out; 'send' waited longer than %v", timeout)
+    }
+}
+
+func Test_send_Panics_When_Bad_Timeout_Given(t *testing.T) {
+    sc := NewSmartChannel(0).(*smartChannel)
+    assert.Panics(t, func() { sc.send("panic", -1) })
+}
+
 // Helper that lets us wrap functions so that we will
 // only need to wait on a channel.
-func WrapToChannel(f interface{}, args ...interface{}) (<-chan interface{}) {
+func WrapFuncToChannel(f interface{}, args ...interface{}) (<-chan interface{}) {
     c := make(chan interface{}, 0)
 
     go func(returns chan interface{}) {
