@@ -39,13 +39,13 @@ func (scr *smartChannelReference) Release(closeOnLast bool) <-chan bool {
     go func(c chan bool) {
         defer close(c)
 
-        if atomic.LoadUint32(scr.released) != channelReleased {
+        if atomic.LoadUint32(scr.released) != channelReleased && closeOnLast {
             scr.once.Do(func() {
                 c <- (<-scr.sc.schedule_release(closeOnLast))
                 atomic.StoreUint32(scr.released, channelReleased)
             })
         } else {
-            c <- true
+            c <- false
         }
     }(c)
 
