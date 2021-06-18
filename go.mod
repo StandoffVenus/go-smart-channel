@@ -1,4 +1,4 @@
-module github.com/standoffvenus/smart-channel
+module github.com/standoffvenus/safe-channel
 
 go 1.16
 
