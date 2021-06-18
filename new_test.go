@@ -1,7 +1,7 @@
 package safe_channel_test
 
 import (
-	"sync"
+	"fmt"
 	"testing"
 	"time"
 
@@ -66,23 +66,6 @@ func TestSendIsNotABlockingFunc(t *testing.T) {
 	send(4)
 }
 
-func BenchmarkCloseWillNotCauseSendErrors(b *testing.B) {
-	waiter := sync.WaitGroup{}
-	waiter.Add(b.N)
-
-	send, _, close := safe_channel.New()
-	for i := 0; i < b.N; i++ {
-		go func() {
-			waiter.Done()
-			waiter.Wait()
-			send(0x42)
-		}()
-	}
-
-	waiter.Wait()
-	<-close()
-}
-
 func TestReceiveValueOnSuccess(t *testing.T) {
 	send, recv, close := safe_channel.New()
 	defer close()
@@ -115,4 +98,36 @@ func TestReceiveChannelClosedAfterFirstCall(t *testing.T) {
 	v, open := <-receiver
 	assert.Nil(t, v)
 	assert.False(t, open)
+}
+
+func ExampleNew() {
+	send, recv, close := safe_channel.New()
+	defer close()
+
+	go func() {
+		<-send(0x42)
+		<-send(0x999)
+	}()
+
+	firstValue, firstOpen := <-recv()
+	fmt.Println(firstValue)
+	fmt.Println(firstOpen)
+	// Output: 66
+
+	// Don't care what the channel is doing; we
+	// can just close it.
+	// We can also call it multiple times from
+	// everywhere.
+	go func() { close() }()
+
+	<-close()
+
+	secondValue, secondOpen := <-recv()
+	fmt.Println(secondValue)
+	fmt.Println(secondOpen)
+	// Output:
+	// 66
+	// true
+	// <nil>
+	// false
 }

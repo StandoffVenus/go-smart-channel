@@ -2,8 +2,11 @@ package safe_channel_test
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
+	"strconv"
 	"testing"
+	"time"
 
 	safe_channel "github.com/standoffvenus/safe-channel"
 	"github.com/stretchr/testify/assert"
@@ -82,4 +85,23 @@ func BenchmarkFirstError(b *testing.B) {
 	}
 
 	<-safe_channel.FirstError(errChans...)
+}
+
+func ExampleFirstError() {
+	errChans := make([]<-chan error, 0, 3)
+
+	for i := 0; i < cap(errChans); i++ {
+		ec := make(chan error)
+		errChans = append(errChans, ec)
+		go func(x int) {
+			// Wait x milliseconds
+			<-time.After(time.Millisecond * time.Duration(x))
+
+			// Send an error where for loop index is the message
+			ec <- errors.New(strconv.FormatInt(int64(x), 10))
+		}(i)
+	}
+
+	fmt.Println(<-safe_channel.FirstError(errChans...))
+	// Output: 0
 }

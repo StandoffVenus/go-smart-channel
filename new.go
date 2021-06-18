@@ -1,3 +1,14 @@
+// Package safe_channel wraps channel functionality to ensure that
+// consumers of a channel needn't worry about a few low-level details,
+// mostly to prevent sending on a closed channel.
+//
+// The bulk of safe_channel can be summarized by three attributes:
+//
+// - Close-agnostic sends with confirmation that the send happened.
+//
+// - Thread-safe channel closing, agnostic of sends.
+//
+// - Normal channel receiving.
 package safe_channel
 
 import (
@@ -33,6 +44,9 @@ type Close func() <-chan struct{}
 // New creates a new channel with no buffer.
 // The returned functions will send to, receive from, and close
 // the new channel (respectively)
+//
+// Because of the resources used underneath, Close should always
+// be called whenever the channel is no longer needed.
 func New() (Send, Receive, Close) {
 	return OfSize(0)
 }
@@ -40,6 +54,9 @@ func New() (Send, Receive, Close) {
 // OfSize creates a new channel with a buffer of the provided size.
 // The returned functions will send to, receive from, and close
 // the new channel (respectively)
+//
+// Because of the resources used underneath, Close should always
+// be called whenever the channel is no longer needed.
 func OfSize(bufferSize int64) (Send, Receive, Close) {
 	const (
 		open int32 = iota
